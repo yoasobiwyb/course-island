@@ -4,27 +4,33 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="在浏览器本地把课表转换成 Apple 日历可导入的 ICS 文件。" />
-    <meta name="theme-color" content="#07111f" />
+    <meta name="theme-color" content="#f6f7fb" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>课程岛转换器</title>
   </head>
   <body>
     <div id="app">
-      <header class="topbar">
-        <a class="brand" href="#" aria-label="课程岛转换器首页">
-          <span class="brand-mark" aria-hidden="true">课</span>
-          <span>课程岛转换器</span>
-        </a>
-        <span class="privacy-pill"><i></i> 数据仅在本机处理</span>
+      <header class="site-header">
+        <div class="header-inner">
+          <a class="brand" href="#" aria-label="课程岛转换器首页">
+            <span class="brand-mark" aria-hidden="true"><i></i><b></b><b></b><b></b><b></b></span>
+            <span class="brand-copy"><strong>课程岛</strong><small>课表转日历</small></span>
+          </a>
+          <span class="privacy-pill"><i aria-hidden="true">✓</i> 本地处理，不上传课表</span>
+        </div>
       </header>
 
       <main class="workspace">
         <section class="intro" aria-labelledby="page-title">
-          <div>
-            <p class="eyebrow">TIMETABLE → CALENDAR</p>
-            <h1 id="page-title">把课表变成可以订阅的日历</h1>
+          <div class="intro-copy">
+            <p class="eyebrow">课表导入工具</p>
+            <h1 id="page-title">导入课表，<em>生成日历</em></h1>
           </div>
-          <p>上传文件，核对课程，再导出到 iPhone、Apple Watch 或其他日历。</p>
+          <div class="intro-guide">
+            <span>简单三步</span>
+            <p>选择文件&nbsp;·&nbsp; 核对课程&nbsp;·&nbsp; 导出到日历</p>
+            <small>可用于 iPhone、Apple Watch 和其他日历应用</small>
+          </div>
         </section>
 
         <section class="work-grid">
