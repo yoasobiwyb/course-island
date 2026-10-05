@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="在浏览器本地把课表转换成 Apple 日历可导入的 ICS 文件。" />
+    <meta name="theme-color" content="#07111f" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>课程岛转换器</title>
+  </head>
+  <body>
+    <div id="app">
+      <header class="topbar">
+        <a class="brand" href="#" aria-label="课程岛转换器首页">
+          <span class="brand-mark" aria-hidden="true">课</span>
+          <span>课程岛转换器</span>
+        </a>
+        <span class="privacy-pill"><i></i> 数据仅在本机处理</span>
+      </header>
+
+      <main class="workspace">
+        <section class="intro" aria-labelledby="page-title">
+          <div>
+            <p class="eyebrow">TIMETABLE → CALENDAR</p>
+            <h1 id="page-title">把课表变成可以订阅的日历</h1>
+          </div>
+          <p>上传文件，核对课程，再导出到 iPhone、Apple Watch 或其他日历。</p>
+        </section>
+
+        <section class="work-grid">
+          <aside class="panel import-panel">
+            <div class="panel-heading">
+              <span class="step">01</span>
+              <div><h2>导入课表</h2><p>支持表格、日历和结构化文本</p></div>
+            </div>
+            <label class="drop-zone" id="drop-zone">
+              <input id="file-input" type="file" accept=".xlsx,.csv,.json,.ics,.txt,.html,.htm" />
+              <span class="upload-icon" aria-hidden="true">＋</span>
+              <strong>选择课表文件</strong>
+              <span>或拖到这里</span>
+              <small>XLSX · CSV · ICS · JSON · HTML · TXT</small>
+            </label>
+            <div class="inline-actions">
+              <button class="button secondary" id="load-sample" type="button">加载示例</button>
+              <button class="button ghost" id="download-template" type="button">下载模板</button>
+            </div>
+            <details class="paste-box">
+              <summary>粘贴 WakeUp JSON 或表格文本</summary>
+              <textarea id="paste-input" rows="7" placeholder="将 WakeUp JSON、课程 JSON，或从表格复制的内容粘贴到这里"></textarea>
+              <button class="button secondary" id="parse-paste" type="button">识别粘贴内容</button>
+            </details>
+            <p class="local-note">文件不会上传到服务器。导入完成前，你可以逐项修改识别结果。</p>
+          </aside>
+
+          <section class="panel preview-panel">
+            <div class="panel-heading">
+              <span class="step">02</span>
+              <div><h2>核对课程</h2><p id="course-count">等待导入</p></div>
+              <button class="button primary export-button" id="export-button" type="button" disabled>导出 ICS</button>
+            </div>
+            <div class="empty-state" id="empty-state">
+              <div class="week-grid" aria-hidden="true"><b>一</b><b>二</b><b>三</b><b>四</b><b>五</b><i></i><i></i><i></i><i></i><i></i></div>
+              <h3>课表会在这里展开</h3>
+              <p>先导入一份文件，或加载示例查看完整流程。</p>
+            </div>
+            <div id="course-table-wrap" class="course-table-wrap" hidden></div>
+          </section>
+        </section>
+
+        <section class="settings-grid" id="settings-grid">
+          <section class="panel settings-panel">
+            <div class="panel-heading">
+              <span class="step">03</span>
+              <div><h2>学期与日历</h2><p>用于把“第几周”换算成具体日期</p></div>
+            </div>
+            <div class="form-grid">
+              <label><span>学期名称</span><input id="semester-name" value="新学期" /></label>
+              <label><span>第一教学周内任意日期</span><input id="semester-start" type="date" /></label>
+              <label><span>日历名称</span><input id="calendar-name" value="课程岛" /></label>
+              <label><span>时区</span><select id="timezone"><option value="Asia/Shanghai">中国标准时间</option><option value="Asia/Hong_Kong">香港时间</option><option value="Asia/Taipei">台北时间</option><option value="Asia/Tokyo">东京时间</option><option value="Europe/London">伦敦时间</option><option value="America/New_York">纽约时间</option></select></label>
+            </div>
+          </section>
+
+          <section class="panel period-panel">
+            <div class="panel-heading">
+              <span class="step">04</span>
+              <div><h2>节次时间</h2><p>按学校作息修改，只需设置一次</p></div>
+              <button class="button ghost compact" id="add-period" type="button">添加</button>
+            </div>
+            <div class="period-list" id="period-list"></div>
+          </section>
+        </section>
+      </main>
+    </div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
