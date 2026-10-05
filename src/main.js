@@ -23,6 +23,7 @@ const elements = {
   calendarName: $("#calendar-name"), timezone: $("#timezone"), periodList: $("#period-list"),
   addPeriod: $("#add-period"), toast: $("#toast"),
 };
+const defaultEmptyState = elements.emptyState.innerHTML;
 
 const storedSettings = JSON.parse(localStorage.getItem("course-island.settings") || "null");
 const storedPeriods = JSON.parse(localStorage.getItem("course-island.periods") || "null");
@@ -47,6 +48,16 @@ function notify(message, kind = "success") {
   elements.toast.className = `toast is-visible ${kind}`;
   window.clearTimeout(notify.timer);
   notify.timer = window.setTimeout(() => { elements.toast.className = "toast"; }, 3200);
+}
+
+function showImportError(message) {
+  elements.count.innerHTML = '<span class="status-warning">导入失败 · 请查看原因</span>';
+  elements.emptyState.hidden = false;
+  elements.emptyState.innerHTML = `
+    <div class="import-error-icon" aria-hidden="true">!</div>
+    <h3>没有读取到课表</h3>
+    <p class="import-error-message">${escapeHtml(message)}</p>
+    <small>你可以重新选择文件，原文件不会被修改。</small>`;
 }
 
 function download(name, content, type) {
@@ -145,10 +156,17 @@ function setCourses(courses, sourceName) {
 async function importFile(file) {
   if (!file) return;
   try {
+    elements.emptyState.innerHTML = defaultEmptyState;
     const extension = file.name.toLowerCase().split(".").pop();
     elements.count.textContent = `正在识别 ${file.name}`;
     let courses;
-    if (extension === "xlsx") {
+    if (extension === "pdf") {
+      const { extractPdfRows } = await import("./pdf-importer.js");
+      const rows = await extractPdfRows(file, (page, total) => {
+        elements.count.textContent = `正在读取 PDF · 第 ${page}/${total} 页`;
+      });
+      courses = parseTableRows(rows);
+    } else if (extension === "xlsx") {
       const rows = await readXlsxFile(file, { dateFormat: "yyyy-mm-dd" });
       courses = parseTableRows(rows);
     } else courses = detectAndParseText(await file.text(), file.name);
@@ -157,6 +175,7 @@ async function importFile(file) {
     console.error(error);
     notify(error.message || "没有识别出课程，请检查文件格式。", "error");
     renderStatus();
+    showImportError(error.message || "没有识别出课程，请检查文件格式。");
   } finally { elements.fileInput.value = ""; }
 }
 

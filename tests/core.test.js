@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { DEFAULT_PERIODS, exportIcs, normalizeCourse, parseCsv, parseWeeks } from "../src/core.js";
+import { groupPdfTextItemsIntoRows, validatePdfSignature } from "../src/pdf-layout.js";
 
 test("周次支持范围、列表和单双周", () => {
   assert.deepEqual(parseWeeks("1-6周"), [1, 2, 3, 4, 5, 6]);
@@ -35,4 +36,18 @@ test("WakeUp JSON 字段会转换为统一课程", () => {
   assert.equal(course.weekday, 3);
   assert.equal(course.period, "3-4");
   assert.deepEqual(course.weeks, [1, 3, 5, 7]);
+});
+
+test("PDF 文字项按坐标重建为表格行", () => {
+  const item = (str, x, y, width = 48) => ({ str, width, height: 12, transform: [12, 0, 0, 12, x, y] });
+  const rows = groupPdfTextItemsIntoRows([
+    item("课程名称", 20, 700), item("星期", 150, 700), item("节次", 230, 700), item("周次", 310, 700),
+    item("高等数学", 20, 670), item("周一", 150, 670), item("1-2", 230, 670), item("1-16周", 310, 670),
+  ]);
+  assert.deepEqual(rows, [["课程名称", "星期", "节次", "周次"], ["高等数学", "周一", "1-2", "1-16周"]]);
+});
+
+test("伪装成 PDF 的教务错误网页会得到明确提示", () => {
+  const bytes = new TextEncoder().encode("<!doctype html><title>错误提示</title><p>出错啦！</p>");
+  assert.throws(() => validatePdfSignature(bytes), /教务系统的错误网页/);
 });
