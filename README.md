@@ -19,6 +19,8 @@
 
 所有文件默认只在浏览器本地解析，不会上传到服务器。
 
+直接使用：[课程岛在线版](https://yoasobiwyb.github.io/course-island/)
+
 ## 配套快捷指令
 
 - [下一节课 · 灵动岛版](https://www.icloud.com/shortcuts/cd95b4e5d6a240a0b6f2644b34958291)：在支持灵动岛的 iPhone 上显示课程信息，需要同时安装下面的 Start Live Activity。
@@ -27,27 +29,7 @@
 
 推荐先用转换器生成并导入课程日历。灵动岛用户先安装 Start Live Activity，再安装灵动岛版；其他用户直接选择 Apple Watch 版。首次运行时允许快捷指令访问日历，并选择课程所在的日历。
 
-## 本地运行
-
-课程岛是浏览器网页，Windows、macOS 和 Linux 都可以直接使用。无需安装桌面客户端；如果只想使用转换功能，打开 [在线版](https://yoasobiwyb.github.io/course-island/) 即可。
-
-### 直接使用（macOS）
-
-完整解压安装包后，双击 `双击启动课程岛.command`。它会在本机启动网页并自动打开浏览器；使用期间请保留弹出的终端窗口，关闭终端即可停止。
-
-不要直接双击项目根目录的 `index.html`：它是开发入口，浏览器用 `file://` 打开时无法加载样式、模块和 PDF 字体资源。
-
-如果 macOS 首次阻止运行，请右键该文件选择“打开”，再确认一次。
-
-### 直接使用（Windows）
-
-完整解压项目或发行包后，双击 `启动课程岛.bat`。如果包内包含 `dist/`，它会启动本机网页并打开浏览器；如果没有本地构建文件，则自动打开 GitHub Pages 在线版。启动本机服务后请保留弹出的命令提示符窗口，关闭它即可停止服务。
-
-也可以右键 `启动课程岛.ps1`，选择“使用 PowerShell 运行”。Windows 本地启动器需要 Python 3；没有 Python 时仍可直接使用在线版。
-
-如果 Windows 阻止脚本运行，请在文件属性中解除“来自其他计算机的文件”限制，或直接打开上面的在线版链接。
-
-### 开发运行
+## 开发
 
 需要 Node.js 22 和 pnpm：
 
@@ -63,7 +45,7 @@ pnpm test
 pnpm build
 ```
 
-构建结果在 `dist/`。如果直接离线使用，请通过任意静态文件服务器打开；也可以直接部署到 GitHub Pages。
+构建结果在 `dist/`，部署到 GitHub Pages 后即可直接使用。
 
 ## 发布到 GitHub Pages
 
