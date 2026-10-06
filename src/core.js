@@ -169,6 +169,100 @@ export function parseTableRows(rows) {
   return courses;
 }
 
+const GRID_WEEKDAY_RE = /^(?:星期|周)([一二三四五六日天])$/;
+const GRID_PERIOD_RE = /^(?:第)?([一二三四五六七八九十百]+|\d+)(?:节|课)$/;
+const CHINESE_DIGITS = { 一: 1, 二: 2, 三: 3, 四: 4, 五: 5, 六: 6, 七: 7, 八: 8, 九: 9, 十: 10, 百: 100 };
+
+function chineseNumber(value) {
+  if (/^\d+$/.test(value)) return Number(value);
+  if (value === "十") return 10;
+  if (value.length === 2 && value[0] === "十") return 10 + CHINESE_DIGITS[value[1]];
+  if (value.length === 2 && value[1] === "十") return CHINESE_DIGITS[value[0]] * 10;
+  if (value.length === 3 && value[1] === "十") return CHINESE_DIGITS[value[0]] * 10 + CHINESE_DIGITS[value[2]];
+  return CHINESE_DIGITS[value] ?? null;
+}
+
+function gridPeriodNumber(value) {
+  const match = String(value ?? "").trim().match(GRID_PERIOD_RE);
+  return match ? chineseNumber(match[1]) : null;
+}
+
+const GRID_WEEK_RANGE_RE = /^(?:第\s*)?((?:\d+\s*(?:-\s*\d+)?\s*周)(?:\s*[,，、]\s*\d+\s*(?:-\s*\d+)?\s*周)*)\s*(.*)$/;
+
+function parseGridCourseCell(value, weekday, period) {
+  const lines = String(value ?? "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const weekLines = lines
+    .map((line, index) => ({ line, index, match: line.match(GRID_WEEK_RANGE_RE) }))
+    .filter((entry) => entry.match);
+  return weekLines.map(({ index, match }, blockIndex) => {
+    let titleIndex = index - 1;
+    while (titleIndex >= 0 && GRID_WEEK_RANGE_RE.test(lines[titleIndex])) titleIndex -= 1;
+    const title = lines[titleIndex]?.replace(/\s+[A-Z]\d{5,}$/i, "").trim() ?? "";
+    const nextBlock = weekLines[blockIndex + 1]?.index ?? lines.length;
+    const nextTitleIndex = nextBlock < lines.length && !GRID_WEEK_RANGE_RE.test(lines[nextBlock - 1] ?? "") ? nextBlock - 1 : nextBlock;
+    const details = match[2].trim();
+    const campusMatch = details.match(/\s(\S*校区)\s*(.*)$/);
+    const teacher = (campusMatch ? details.slice(0, campusMatch.index) : details).trim();
+    const room = (campusMatch?.[2] ?? "").trim();
+    const notes = lines.slice(index + 1, nextTitleIndex).join(" ");
+    return {
+      title,
+      teacher,
+      room,
+      weekday,
+      period,
+      weeks: parseWeeks(match[1]),
+      notes,
+      source: "xlsx-grid",
+    };
+  }).filter((course) => course.title && course.weeks.length);
+}
+
+export function parseAcademicGridRows(rows) {
+  if (!Array.isArray(rows) || !rows.length) return [];
+  const matrix = rows.map((row) => Array.isArray(row) ? row : Object.values(row));
+  const header = matrix.slice(0, 12).map((row, index) => ({
+    index,
+    days: row.map((value, column) => {
+      const match = String(value ?? "").trim().match(GRID_WEEKDAY_RE);
+      return match ? { weekday: normalizeWeekday(match[0]), column } : null;
+    }).filter(Boolean),
+  })).sort((a, b) => b.days.length - a.days.length)[0];
+  if (!header || header.days.length < 3) return [];
+
+  const dayColumns = header.days.sort((a, b) => a.column - b.column);
+  const periodRows = matrix.slice(header.index + 1).map((row, offset) => ({
+    row,
+    period: gridPeriodNumber(row[0]),
+    index: header.index + 1 + offset,
+  })).filter((entry) => entry.period);
+  if (!periodRows.length) return [];
+
+  const courses = [];
+  for (const periodRow of periodRows) {
+    for (let dayIndex = 0; dayIndex < dayColumns.length; dayIndex += 1) {
+      const day = dayColumns[dayIndex];
+      const nextDay = dayColumns[dayIndex + 1];
+      const cells = periodRow.row.slice(day.column, nextDay?.column ?? periodRow.row.length)
+        .map((value) => String(value ?? "").trim())
+        .filter(Boolean);
+      if (!cells.length) continue;
+      const nextPeriodRow = periodRows.find((candidate) => candidate.period === periodRow.period + 1);
+      const nextCells = nextPeriodRow
+        ? nextPeriodRow.row.slice(day.column, nextDay?.column ?? nextPeriodRow.row.length).map((value) => String(value ?? "").trim()).filter(Boolean)
+        : [];
+      const period = periodRow.period % 2 === 1 && !nextCells.length
+        ? `${periodRow.period}-${periodRow.period + 1}`
+        : String(periodRow.period);
+      courses.push(...parseGridCourseCell(cells.join("\n"), day.weekday, period));
+    }
+  }
+  return courses;
+}
+
 export function parseCsv(text) {
   const rows = [];
   let row = [];

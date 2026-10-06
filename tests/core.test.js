@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { DEFAULT_PERIODS, exportIcs, normalizeCourse, parseCsv, parseWeeks } from "../src/core.js";
+import { DEFAULT_PERIODS, exportIcs, normalizeCourse, parseAcademicGridRows, parseCsv, parseWeeks } from "../src/core.js";
 import { groupPdfTextItemsIntoRows, normalizePdfTextItem, parseAcademicGridPages, validatePdfSignature } from "../src/pdf-layout.js";
 
 test("周次支持范围、列表和单双周", () => {
@@ -15,6 +15,20 @@ test("CSV 表头能映射成统一课程字段", () => {
   assert.equal(courses[0].weekday, 1);
   assert.equal(courses[0].period, "1-2");
   assert.equal(courses[0].weeks.length, 16);
+});
+
+test("Excel 网格课表能识别星期、合并节次和课程详情", () => {
+  const rows = [
+    ["学期课表", null, null, null, null, null, null, null, null],
+    ["节次/星期", null, null, "星期日", null, null, "星期一", null, null, "星期二"],
+    ["第一节", "第一节", "第一节", null, null, null, null, null, null, null],
+    ["第二节", "第二节", "第二节", null, null, null, null, null, null, null],
+    ["第三节", "第三节", "第三节", null, null, null, "成型2505\n物理化学(1) A116632\n1-17周 郭迪 南湖校区 机216\n考试", null, null, null],
+    ["第四节", "第四节", "第四节", null, null, null, null, null, null, null],
+  ];
+  assert.deepEqual(parseAcademicGridRows(rows), [{
+    title: "物理化学(1)", teacher: "郭迪", room: "机216", weekday: 1, period: "3-4", weeks: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17], notes: "考试", source: "xlsx-grid",
+  }]);
 });
 
 test("ICS 使用稳定 UID 并展开教学周", () => {

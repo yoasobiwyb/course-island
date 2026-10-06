@@ -9,6 +9,7 @@ import {
   exportIcs,
   formatWeeks,
   normalizeCourse,
+  parseAcademicGridRows,
   parseTableRows,
   parseWeeks,
   sampleCourses,
@@ -169,8 +170,10 @@ async function importFile(file) {
       courses = parseAcademicGridPages(pdf.pages);
       if (!courses.length) courses = parseTableRows(pdf.rows);
     } else if (extension === "xlsx") {
-      const rows = await readXlsxFile(file, { dateFormat: "yyyy-mm-dd" });
-      courses = parseTableRows(rows);
+      const workbook = await readXlsxFile(file, { dateFormat: "yyyy-mm-dd" });
+      const rows = Array.isArray(workbook) && workbook[0]?.data ? workbook[0].data : workbook;
+      courses = parseAcademicGridRows(rows);
+      if (!courses.length) courses = parseTableRows(rows);
     } else courses = detectAndParseText(await file.text(), file.name);
     setCourses(courses, file.name);
   } catch (error) {
