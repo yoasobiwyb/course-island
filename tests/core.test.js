@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { DEFAULT_PERIODS, exportIcs, normalizeCourse, parseCsv, parseWeeks } from "../src/core.js";
-import { groupPdfTextItemsIntoRows, validatePdfSignature } from "../src/pdf-layout.js";
+import { groupPdfTextItemsIntoRows, normalizePdfTextItem, parseAcademicGridPages, validatePdfSignature } from "../src/pdf-layout.js";
 
 test("周次支持范围、列表和单双周", () => {
   assert.deepEqual(parseWeeks("1-6周"), [1, 2, 3, 4, 5, 6]);
@@ -47,7 +47,58 @@ test("PDF 文字项按坐标重建为表格行", () => {
   assert.deepEqual(rows, [["课程名称", "星期", "节次", "周次"], ["高等数学", "周一", "1-2", "1-16周"]]);
 });
 
+test("横向 PDF 会把旋转坐标还原为可视页面坐标", () => {
+  const normalized = normalizePdfTextItem({ str: "星期一", transform: [12, 0, 0, 12, 74, 133] }, 90, [0, 0, 595, 842]);
+  assert.equal(normalized.transform[4], 133);
+  assert.equal(normalized.transform[5], 521);
+});
+
 test("伪装成 PDF 的教务错误网页会得到明确提示", () => {
   const bytes = new TextEncoder().encode("<!doctype html><title>错误提示</title><p>出错啦！</p>");
   assert.throws(() => validatePdfSignature(bytes), /教务系统的错误网页/);
+});
+
+test("教务系统网格 PDF 按星期列识别课程", () => {
+  const item = (text, x, y, width = 40) => ({ text, x, y, width, height: 10 });
+  const page = [
+    ...["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"].map((text, index) => item(text, 120 + (index * 100), 520, 36)),
+    item("高等数学", 105, 480, 50),
+    item("(1-2节)1-16周/校区:本部/场地:A201/教师:张老师/教学班:01", 105, 465, 90),
+    item("毛泽东思想和中国特色", 405, 400, 90),
+    item("社会主义理论体系概论", 405, 388, 90),
+    item("(5-6节)10-16周/校区:本部/场地:B302/教师:李老师/教学班:02", 405, 375, 90),
+  ];
+  const courses = parseAcademicGridPages([page]);
+  assert.equal(courses.length, 2);
+  assert.deepEqual(courses[0], { title: "高等数学", teacher: "张老师", room: "A201", weekday: 1, period: "1-2", weeks: "1-16周", notes: "由网格课表 PDF 识别", source: "pdf-grid" });
+  assert.equal(courses[1].weekday, 4);
+  assert.equal(courses[1].title, "毛泽东思想和中国特色社会主义理论体系概论");
+});
+
+test("网格 PDF 的星期标题拆成单字时仍可识别", () => {
+  const item = (text, x, y, width = 12) => ({ text, x, y, width, height: 10 });
+  const page = [];
+  ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"].forEach((label, dayIndex) => {
+    Array.from(label).forEach((character, characterIndex) => page.push(item(character, 120 + (dayIndex * 100) + (characterIndex * 12), 520)));
+  });
+  page.push(item("离散数学", 105, 480, 50));
+  page.push(item("(1-2节)1-8周/校区:本部/场地:A101/教师:王老师/教学班:01", 105, 465, 90));
+  const courses = parseAcademicGridPages([page]);
+  assert.equal(courses.length, 1);
+  assert.equal(courses[0].title, "离散数学");
+  assert.equal(courses[0].weekday, 1);
+});
+
+test("课程详情跨 PDF 分页时会连续读取", () => {
+  const item = (text, x, y, width = 40) => ({ text, x, y, width, height: 10 });
+  const firstPage = [
+    ...["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"].map((text, index) => item(text, 120 + (index * 100), 520, 36)),
+    item("大学物理实验(1)", 205, 80, 70),
+    item("(9-10节)第11周/校区:本部/场地:实验室9/教师:杨", 205, 65, 90),
+  ];
+  const secondPage = [item("学英/教学班:大学物理实验(1)-01", 205, 540, 90)];
+  const courses = parseAcademicGridPages([firstPage, secondPage]);
+  assert.equal(courses.length, 1);
+  assert.equal(courses[0].teacher, "杨学英");
+  assert.equal(courses[0].room, "实验室9");
 });

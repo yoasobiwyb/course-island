@@ -1,5 +1,6 @@
 import readXlsxFile from "read-excel-file/browser";
 import "./styles.css";
+import { parseAcademicGridPages } from "./pdf-layout.js";
 import {
   DEFAULT_PERIODS,
   WEEKDAY_NAMES,
@@ -162,10 +163,11 @@ async function importFile(file) {
     let courses;
     if (extension === "pdf") {
       const { extractPdfRows } = await import("./pdf-importer.js");
-      const rows = await extractPdfRows(file, (page, total) => {
+      const pdf = await extractPdfRows(file, (page, total) => {
         elements.count.textContent = `正在读取 PDF · 第 ${page}/${total} 页`;
       });
-      courses = parseTableRows(rows);
+      courses = parseAcademicGridPages(pdf.pages);
+      if (!courses.length) courses = parseTableRows(pdf.rows);
     } else if (extension === "xlsx") {
       const rows = await readXlsxFile(file, { dateFormat: "yyyy-mm-dd" });
       courses = parseTableRows(rows);
