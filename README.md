@@ -19,6 +19,14 @@
 
 所有文件默认只在浏览器本地解析，不会上传到服务器。
 
+## 配套快捷指令
+
+- [下一节课 · 灵动岛版](https://www.icloud.com/shortcuts/cd95b4e5d6a240a0b6f2644b34958291)：在支持灵动岛的 iPhone 上显示课程信息，需要同时安装下面的 Start Live Activity。
+- [下一节课 · Apple Watch 版](https://www.icloud.com/shortcuts/5d00fab90814478ab2539a3e374d82fc)：可在 Apple Watch 或 iPhone 上运行，不需要额外的灵动岛显示软件。
+- [Start Live Activity](https://www.icloud.com/shortcuts/f4a69c8326084039be14545f0e562fce)：接收课程文本并交给 LiveShortcut 显示实时活动。
+
+推荐先用转换器生成并导入课程日历。灵动岛用户先安装 Start Live Activity，再安装灵动岛版；其他用户直接选择 Apple Watch 版。首次运行时允许快捷指令访问日历，并选择课程所在的日历。
+
 ## 本地运行
 
 ### 直接使用（macOS）
